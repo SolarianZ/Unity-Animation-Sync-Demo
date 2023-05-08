@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -11,6 +10,8 @@ namespace GBG.AnimationSyncDemo.Editor
     [CustomEditor(typeof(AnimationSyncMarkerAsset))]
     public class SyncMarkerAssetInspector : UnityEditor.Editor, IHasCustomMenu
     {
+        private VisualElement _defaultInspectorContainer;
+
         private SyncMarkerTimeline _timeline;
 
         private AnimationClip _previewClip;
@@ -43,7 +44,16 @@ namespace GBG.AnimationSyncDemo.Editor
             };
 
             // Default inspector
-            InspectorElement.FillDefaultInspector(root, serializedObject, this);
+            _defaultInspectorContainer = new VisualElement
+            {
+                name = "DefaultInspector",
+                style =
+                {
+                    display = _displayDefaultInspector ? DisplayStyle.Flex : DisplayStyle.None,
+                }
+            };
+            InspectorElement.FillDefaultInspector(_defaultInspectorContainer, serializedObject, this);
+            root.Add(_defaultInspectorContainer);
 
             // Timeline
             var tmlContainer = new VisualElement
@@ -184,23 +194,23 @@ namespace GBG.AnimationSyncDemo.Editor
                 var instance = GetInstance();
                 var markerGuid = AssetDatabase.AssetPathToGUID(markerPath);
                 var clipCaches = instance._items;
-                var clipCache = clipCaches.FirstOrDefault(item => item.MarkerGuid == markerGuid);
+                var clipCacheIndex = clipCaches.FindIndex(item => item.MarkerGuid == markerGuid);
 
                 if (string.IsNullOrEmpty(clipGuid))
                 {
-                    if (clipCache == null)
+                    if (clipCacheIndex == -1)
                     {
                         return;
                     }
 
-                    clipCaches.Remove(clipCache);
+                    clipCaches.RemoveAt(clipCacheIndex);
                     SaveInstance(instance);
                     return;
                 }
 
-                if (clipCache != null)
+                if (clipCacheIndex != -1)
                 {
-                    clipCache.ClipGuid = clipGuid;
+                    clipCaches[clipCacheIndex].ClipGuid = clipGuid;
                 }
                 else
                 {
@@ -260,11 +270,20 @@ namespace GBG.AnimationSyncDemo.Editor
         [SerializeField]
         private bool _displayMarkerTime = true;
 
+        [SerializeField]
+        private bool _displayDefaultInspector;
+
         void IHasCustomMenu.AddItemsToMenu(GenericMenu menu)
         {
-            menu.AddItem(new GUIContent("Display Marker Time"), _displayMarkerTime, () =>
+            menu.AddItem(new GUIContent("Display marker time"), _displayMarkerTime, () =>
             {
                 _displayMarkerTime = !_displayMarkerTime;
+            });
+
+            menu.AddItem(new GUIContent("Display default inspector"), _displayDefaultInspector, () =>
+            {
+                _displayDefaultInspector = !_displayDefaultInspector;
+                _defaultInspectorContainer.style.display = _displayDefaultInspector ? DisplayStyle.Flex : DisplayStyle.None;
             });
 
             menu.AddItem(new GUIContent("Delete all preview clip caches"), false, () =>
