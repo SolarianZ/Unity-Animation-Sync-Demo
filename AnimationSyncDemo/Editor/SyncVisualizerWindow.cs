@@ -7,10 +7,10 @@ namespace GBG.AnimationSyncDemo.Editor
 {
     public class SyncVisualizerWindow : EditorWindow, IHasCustomMenu
     {
-        [MenuItem("Tools/Bamboo/Sync Visualizer")]
+        [MenuItem("Tools/Bamboo/Animation Sync Visualizer")]
         public static void Open()
         {
-            GetWindow<SyncVisualizerWindow>("Sync Visualizer");
+            GetWindow<SyncVisualizerWindow>("Animation Sync Visualizer");
         }
 
 
@@ -180,7 +180,8 @@ namespace GBG.AnimationSyncDemo.Editor
                 }
             };
             _timelineA = new SyncMarkerTimeline();
-            _timelineA.MarkerModificationUndoRecorder += RecordMarkerAssetModificationUndoA;
+            _timelineA.OnBeforeModifyMarkers += RecordMarkerAssetModificationUndoA;
+            _timelineA.OnAfterModifyMarkers += SetMarkerAssetDirtyA;
             tmlContainerA.Add(_timelineA);
             rootVisualElement.Add(tmlContainerA);
 
@@ -206,7 +207,8 @@ namespace GBG.AnimationSyncDemo.Editor
                 }
             };
             _timelineB = new SyncMarkerTimeline();
-            _timelineB.MarkerModificationUndoRecorder += RecordMarkerAssetModificationUndoB;
+            _timelineB.OnBeforeModifyMarkers += RecordMarkerAssetModificationUndoB;
+            _timelineB.OnAfterModifyMarkers += SetMarkerAssetDirtyB;
             tmlContainerB.Add(_timelineB);
             rootVisualElement.Add(tmlContainerB);
         }
@@ -336,9 +338,21 @@ namespace GBG.AnimationSyncDemo.Editor
             Undo.RecordObject(_markerAssetA, "Modify Sync Marker");
         }
 
+        private void SetMarkerAssetDirtyA()
+        {
+            _markerAssetA.EnsureMarkersInAscendOrder();
+            EditorUtility.SetDirty(_markerAssetA);
+        }
+
         private void RecordMarkerAssetModificationUndoB()
         {
             Undo.RecordObject(_markerAssetB, "Modify Sync Marker");
+        }
+
+        private void SetMarkerAssetDirtyB()
+        {
+            _markerAssetB.EnsureMarkersInAscendOrder();
+            EditorUtility.SetDirty(_markerAssetB);
         }
 
 

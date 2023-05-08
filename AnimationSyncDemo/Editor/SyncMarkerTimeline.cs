@@ -60,11 +60,14 @@ namespace GBG.AnimationSyncDemo.Editor
             set => _timeSlider.SetEnabled(value);
         }
 
-        public bool EnableMarkerDragger { get; set; } = true;
+        public bool EnableMarkerEditing { get; set; } = true;
 
         private bool _isDraggingMarker;
 
-        public Action MarkerModificationUndoRecorder;
+        public event Action<float> OnTimeInternallyChanged;
+
+        public Action OnBeforeModifyMarkers;
+        public Action OnAfterModifyMarkers;
 
 
         public SyncMarkerTimeline()
@@ -133,7 +136,7 @@ namespace GBG.AnimationSyncDemo.Editor
             _timeSliderDragger.style.borderBottomRightRadius = 0;
             _timeSliderDragger.style.borderTopLeftRadius = 0;
             _timeSliderDragger.style.borderTopRightRadius = 0;
-            _timeSliderDragger.style.width = 4;
+            _timeSliderDragger.style.width = 6;
             _timeSliderDragger.style.flexShrink = 0;
             _timeSliderDragger.style.backgroundColor = Color.blue;
             // Add slider dragger label
@@ -157,6 +160,7 @@ namespace GBG.AnimationSyncDemo.Editor
             {
                 _time = evt.newValue;
                 _timeSliderLabel.text = _time.ToString("F3");
+                OnTimeInternallyChanged?.Invoke(_time);
             });
             Add(_timeSlider);
 
@@ -236,7 +240,7 @@ namespace GBG.AnimationSyncDemo.Editor
                 markerElement.Name = marker.Name;
                 markerElement.Time = marker.Time;
                 markerElement.DisplayTime = _displayMarkerTime;
-                markerElement.Draggable = EnableMarkerDragger;
+                markerElement.Draggable = EnableMarkerEditing;
             }
         }
 
@@ -258,8 +262,9 @@ namespace GBG.AnimationSyncDemo.Editor
                 return;
             }
 
-            MarkerModificationUndoRecorder?.Invoke();
+            OnBeforeModifyMarkers?.Invoke();
             marker.Time = markerElement.Time;
+            OnAfterModifyMarkers?.Invoke();
         }
 
         private void OnWantsToRenameMarker(SyncMarkerElement markerElement)
@@ -270,19 +275,21 @@ namespace GBG.AnimationSyncDemo.Editor
                 return;
             }
 
-            MarkerModificationUndoRecorder?.Invoke();
+            OnBeforeModifyMarkers?.Invoke();
             marker.Name = markerElement.Name;
+            OnAfterModifyMarkers?.Invoke();
         }
 
         private void OnWantsToDeleteMarker(SyncMarkerElement markerElement)
         {
-            MarkerModificationUndoRecorder?.Invoke();
+            OnBeforeModifyMarkers?.Invoke();
             Markers.RemoveAt(markerElement.Index);
+            OnAfterModifyMarkers?.Invoke();
         }
 
         private void OnTimelineContextClick(ContextClickEvent evt)
         {
-            if (Markers == null)
+            if (!EnableMarkerEditing || Markers == null)
             {
                 return;
             }
@@ -297,6 +304,11 @@ namespace GBG.AnimationSyncDemo.Editor
 
         private void OnTimeCursorContextClick(ContextClickEvent evt)
         {
+            if (!EnableMarkerEditing || Markers == null)
+            {
+                return;
+            }
+
             evt.StopPropagation();
 
             var menu = new GenericDropdownMenu();
@@ -309,7 +321,7 @@ namespace GBG.AnimationSyncDemo.Editor
             var addMarkerField = new AddMarkerField(time, (markerName, markerTime) =>
             {
                 Assert.IsTrue(!string.IsNullOrWhiteSpace(markerName) && (markerTime >= 0 && markerTime <= 1));
-                MarkerModificationUndoRecorder?.Invoke();
+                OnBeforeModifyMarkers?.Invoke();
 
                 var marker = new AnimationSyncMarker
                 {
@@ -323,6 +335,8 @@ namespace GBG.AnimationSyncDemo.Editor
                     if (a.Time > b.Time) return 1;
                     return 0;
                 });
+
+                OnAfterModifyMarkers?.Invoke();
             });
 
             Add(addMarkerField);
