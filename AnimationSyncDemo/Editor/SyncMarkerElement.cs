@@ -6,6 +6,10 @@ namespace GBG.AnimationSyncDemo.Editor
 {
     public class SyncMarkerElement : VisualElement
     {
+        public static Color NormalColor => new Color(0f, 1f, 0f, 0.75f);
+        public static Color WarningColor => new Color(1f, 0.76f, 0.03f, 0.75f);
+
+
         private string _name;
         private float _time;
         private bool _displayTime;
@@ -63,7 +67,7 @@ namespace GBG.AnimationSyncDemo.Editor
             style.borderTopRightRadius = 4;
             style.borderBottomRightRadius = 4;
             style.position = Position.Absolute;
-            style.backgroundColor = new Color(0, 1, 0, 0.75f);
+            style.backgroundColor = NormalColor;
 
             _label = new Label
             {
@@ -78,6 +82,11 @@ namespace GBG.AnimationSyncDemo.Editor
             Add(_label);
 
             RegisterCallback<ContextClickEvent>(OnContextClick);
+        }
+
+        public void SetColor(Color color)
+        {
+            style.backgroundColor = color;
         }
 
         public void StartDragging()

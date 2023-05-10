@@ -10,7 +10,7 @@ namespace GBG.AnimationSyncDemo.Editor
 {
     public class SyncMarkerTimeline : VisualElement
     {
-        public static readonly Color BackgroundColor = Color.gray;
+        public static Color BackgroundColor => Color.gray;
         public const float MinHeight = 40f;
         private const float StartTime = 0f;
         private const float EndTime = 1f;
@@ -41,7 +41,6 @@ namespace GBG.AnimationSyncDemo.Editor
             }
         }
 
-
         private float _time;
         public float Time
         {
@@ -62,8 +61,9 @@ namespace GBG.AnimationSyncDemo.Editor
 
         public bool EnableMarkerEditing { get; set; } = true;
 
-        private bool _isDraggingMarker;
+        public float MarkerIntervalThreshold { get; set; } = 0.01f;
 
+        private bool _isDraggingMarker;
         public event Action<float> OnTimeInternallyChanged;
 
         public Action OnBeforeModifyMarkers;
@@ -197,10 +197,7 @@ namespace GBG.AnimationSyncDemo.Editor
 
         public void Update()
         {
-            if (!_isDraggingMarker)
-            {
-                UpdateMarkers();
-            }
+            UpdateMarkers();
         }
 
         private void UpdateMarkers()
@@ -233,14 +230,48 @@ namespace GBG.AnimationSyncDemo.Editor
 
             for (int i = 0; i < markerCount; i++)
             {
-                var marker = Markers[i];
+                var marker = Markers![i];
                 var markerElement = _markerElements[i];
-                markerElement.style.left = Length.Percent((marker.Time - StartTime) / (EndTime - StartTime) * 100);
                 markerElement.Index = i;
                 markerElement.Name = marker.Name;
-                markerElement.Time = marker.Time;
                 markerElement.DisplayTime = _displayMarkerTime;
                 markerElement.Draggable = EnableMarkerEditing;
+
+                if (!_isDraggingMarker)
+                {
+                    markerElement.Time = marker.Time;
+                    markerElement.style.left = Length.Percent((marker.Time - StartTime) / (EndTime - StartTime) * 100);
+                }
+
+                if (i > 0 && IsMarkersTooClose(markerElement, _markerElements[i - 1]))
+                {
+                    markerElement.SetColor(SyncMarkerElement.WarningColor);
+                    continue;
+                }
+
+                if (i < markerCount - 1 && IsMarkersTooClose(markerElement, _markerElements[i + 1]))
+                {
+                    markerElement.SetColor(SyncMarkerElement.WarningColor);
+                    continue;
+                }
+
+                if (markerCount != 1)
+                {
+
+                    if (i == 0 && IsMarkersTooClose(markerElement, _markerElements[markerCount - 1]))
+                    {
+                        markerElement.SetColor(SyncMarkerElement.WarningColor);
+                        continue;
+                    }
+
+                    if (i == markerCount - 1 && IsMarkersTooClose(markerElement, _markerElements[0]))
+                    {
+                        markerElement.SetColor(SyncMarkerElement.WarningColor);
+                        continue;
+                    }
+                }
+
+                markerElement.SetColor(SyncMarkerElement.NormalColor);
             }
         }
 
@@ -341,6 +372,17 @@ namespace GBG.AnimationSyncDemo.Editor
 
             Add(addMarkerField);
             addMarkerField.FocusNameInput();
+        }
+
+        private bool IsMarkersTooClose(SyncMarkerElement a, SyncMarkerElement b)
+        {
+            var intervalAbs = Mathf.Abs(a.Time - b.Time);
+            if (intervalAbs < MarkerIntervalThreshold || intervalAbs > 1.0f - MarkerIntervalThreshold)
+            {
+                return true;
+            }
+
+            return false;
         }
 
 
