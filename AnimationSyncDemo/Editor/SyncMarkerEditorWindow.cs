@@ -58,6 +58,7 @@ namespace GBG.AnimationSyncDemo.Editor
             _assetField.value = asset;
         }
 
+
         private void OnEnable()
         {
             // Target asset field
@@ -120,7 +121,6 @@ namespace GBG.AnimationSyncDemo.Editor
             rootVisualElement.Add(_animPreviewContainer);
         }
 
-
         private void Update()
         {
             // Update timeline
@@ -163,11 +163,21 @@ namespace GBG.AnimationSyncDemo.Editor
         private void OnTargetAssetChanged(ChangeEvent<Object> evt)
         {
             _markerAsset = (AnimationSyncMarkerAsset)evt.newValue;
+            var previewClip = SyncMarkerAssetInspector.PreviewClipCache.GetPreviewClip(_markerAsset);
+            SetPreviewClipWithoutNofity(previewClip);
         }
 
         private void OnPreviewClipChanged(ChangeEvent<Object> evt)
         {
             _previewClip = (AnimationClip)evt.newValue;
+            _animPreview.Initialize(_previewClip);
+            SyncMarkerAssetInspector.PreviewClipCache.SetPreviewClipCache(_markerAsset, _previewClip);
+        }
+
+        private void SetPreviewClipWithoutNofity(AnimationClip previewClip)
+        {
+            _previewClip = previewClip;
+            _clipField.SetValueWithoutNotify(_previewClip);
             _animPreview.Initialize(_previewClip);
         }
 

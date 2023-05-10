@@ -21,7 +21,7 @@ namespace GBG.AnimationSyncDemo.Editor
 
         private void OnEnable()
         {
-            _previewClip = PreviewClipCacheTable.GetPreviewClip((AnimationSyncMarkerAsset)target);
+            _previewClip = PreviewClipCache.GetPreviewClip((AnimationSyncMarkerAsset)target);
             _animPreview ??= new MotionPreview();
             _animPreview.Initialize(_previewClip);
 
@@ -92,10 +92,10 @@ namespace GBG.AnimationSyncDemo.Editor
         public override void OnInteractivePreviewGUI(Rect r, GUIStyle background)
         {
             EditorGUI.BeginChangeCheck();
-            _previewClip = (AnimationClip)EditorGUILayout.ObjectField("Preview Clip", _previewClip, typeof(AnimationClip), false);
+            _previewClip = (AnimationClip)EditorGUILayout.ObjectField("Editor Preview Clip", _previewClip, typeof(AnimationClip), false);
             if (EditorGUI.EndChangeCheck())
             {
-                PreviewClipCacheTable.SetPreviewClipCache((AnimationSyncMarkerAsset)target, _previewClip);
+                PreviewClipCache.SetPreviewClipCache((AnimationSyncMarkerAsset)target, _previewClip);
                 _animPreview.Initialize(_previewClip);
             }
 
@@ -129,7 +129,7 @@ namespace GBG.AnimationSyncDemo.Editor
         #region Preview Clip Cache
 
         [Serializable]
-        class PreviewClipCacheTable
+        public class PreviewClipCache
         {
             [SerializeField]
             private List<PreviewClipCachePair> _items = new();
@@ -137,6 +137,11 @@ namespace GBG.AnimationSyncDemo.Editor
 
             public static AnimationClip GetPreviewClip(AnimationSyncMarkerAsset marker)
             {
+                if (!marker)
+                {
+                    return null;
+                }
+
                 var markerPath = AssetDatabase.GetAssetPath(marker);
                 if (string.IsNullOrEmpty(markerPath))
                 {
@@ -174,6 +179,11 @@ namespace GBG.AnimationSyncDemo.Editor
 
             public static void SetPreviewClipCache(AnimationSyncMarkerAsset marker, AnimationClip clip)
             {
+                if (!marker)
+                {
+                    return;
+                }
+
                 var markerPath = AssetDatabase.GetAssetPath(marker);
                 if (string.IsNullOrEmpty(markerPath))
                 {
@@ -231,18 +241,18 @@ namespace GBG.AnimationSyncDemo.Editor
                 return $"SyncMarkerPreviewClipCacheTable@{Application.companyName}@{Application.productName}";
             }
 
-            private static PreviewClipCacheTable GetInstance()
+            private static PreviewClipCache GetInstance()
             {
                 var json = EditorPrefs.GetString(GetPreviewClipCacheTableKey());
                 if (string.IsNullOrEmpty(json))
                 {
-                    return new PreviewClipCacheTable();
+                    return new PreviewClipCache();
                 }
 
-                return JsonUtility.FromJson<PreviewClipCacheTable>(json);
+                return JsonUtility.FromJson<PreviewClipCache>(json);
             }
 
-            private static void SaveInstance(PreviewClipCacheTable instance)
+            private static void SaveInstance(PreviewClipCache instance)
             {
                 var json = JsonUtility.ToJson(instance);
                 EditorPrefs.SetString(GetPreviewClipCacheTableKey(), json);
@@ -288,7 +298,7 @@ namespace GBG.AnimationSyncDemo.Editor
 
             menu.AddItem(new GUIContent("Delete all preview clip caches"), false, () =>
             {
-                PreviewClipCacheTable.DeleteAllCaches();
+                PreviewClipCache.DeleteAllCaches();
             });
         }
 
