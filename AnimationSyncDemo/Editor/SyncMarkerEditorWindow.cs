@@ -164,7 +164,7 @@ namespace GBG.AnimationSyncDemo.Editor
         {
             _markerAsset = (AnimationSyncMarkerAsset)evt.newValue;
             var previewClip = SyncMarkerAssetInspector.PreviewClipCache.GetPreviewClip(_markerAsset);
-            SetPreviewClipWithoutNofity(previewClip);
+            SetPreviewClipWithoutNotify(previewClip);
         }
 
         private void OnPreviewClipChanged(ChangeEvent<Object> evt)
@@ -174,7 +174,7 @@ namespace GBG.AnimationSyncDemo.Editor
             SyncMarkerAssetInspector.PreviewClipCache.SetPreviewClipCache(_markerAsset, _previewClip);
         }
 
-        private void SetPreviewClipWithoutNofity(AnimationClip previewClip)
+        private void SetPreviewClipWithoutNotify(AnimationClip previewClip)
         {
             _previewClip = previewClip;
             _clipField.SetValueWithoutNotify(_previewClip);
